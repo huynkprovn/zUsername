@@ -94,7 +94,7 @@ namespace LightningRyze
                           
         private static void Game_OnGameUpdate(EventArgs args)
         {         
-        	target = SimpleTs.GetTarget(625, SimpleTs.DamageType.Magical);
+        	target = SimpleTs.GetTarget(Q.Range, SimpleTs.DamageType.Magical);
 			if (Config.Item("ComboActive").GetValue<KeyBind>().Active)
 			{
 				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) ComboMixed();
@@ -196,9 +196,9 @@ namespace LightningRyze
         		    W.CastOnUnit(target,UsePacket);    
 				else
 				{
-					var comboDmg = DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.Q).Level * 25)) + (0.2 * ObjectManager.Player.FlatMagicDamageMod), target) * 2 +
-						DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.W).Level * 35)) + (0.2 * ObjectManager.Player.FlatMagicDamageMod), target) +
-						DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.E).Level * 20)) + (0.2 * ObjectManager.Player.FlatMagicDamageMod), target);
+					var comboDmg = DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.Q).Level * 25)) + (0.4 * ObjectManager.Player.FlatMagicDamageMod + 0.065 * ObjectManager.Player.MaxMana ), target)  +
+					DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.W).Level * 35)) + (0.6 * ObjectManager.Player.FlatMagicDamageMod + 0.045 * ObjectManager.Player.MaxMana), target) +
+					DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.E).Level * 20)) + (0.35 * ObjectManager.Player.FlatMagicDamageMod + 0.01 * ObjectManager.Player.MaxMana), target);
 					if ((Q.IsReady() && W.IsReady() && E.IsReady() && comboDmg > target.Health) || comboDmg > target.MaxHealth)
 					{
 						if (Q.IsReady()) Q.CastOnUnit(target,UsePacket);
