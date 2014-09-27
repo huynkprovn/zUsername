@@ -7,8 +7,8 @@
     <ProjectGuid>{88E594CB-F803-4291-A037-40B81549189B}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LightningRyze</RootNamespace>
-    <AssemblyName>LightningRyze</AssemblyName>
+    <RootNamespace>LightningLux</RootNamespace>
+    <AssemblyName>LightningLux</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -56,6 +56,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+	<Compile Include="SpellData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,8 +1,9 @@
 ﻿#region
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using Color = System.Drawing.Color;
 using System.Linq;
+using SharpDX;
 using LeagueSharp;
 using LeagueSharp.Common;
 #endregion
@@ -16,6 +17,7 @@ namespace LightningRyze
         private static string LastCast;
         private static float LastFlashTime;
         private static Obj_AI_Hero target;
+        private static Obj_AI_Hero myHero;
        	private static Spell Q;
 		private static Spell W;
 		private static Spell E;
@@ -29,13 +31,14 @@ namespace LightningRyze
           
         private static void Game_OnGameLoad(EventArgs args)
         {
-           	if (ObjectManager.Player.ChampionName != "Ryze") return;
+        	myHero = ObjectManager.Player;
+           	if (myHero.ChampionName != "Ryze") return;
            	
        		Q = new Spell(SpellSlot.Q, 625);
 			W = new Spell(SpellSlot.W, 600);
 			E = new Spell(SpellSlot.E, 600);
 			R = new Spell(SpellSlot.R);
-			IgniteSlot = ObjectManager.Player.GetSpellSlot("SummonerDot");  
+			IgniteSlot = myHero.GetSpellSlot("SummonerDot");  
 			
 			Config = new Menu("Lightning Ryze", "Lightning Ryze", true);
 			var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
@@ -52,13 +55,13 @@ namespace LightningRyze
             Config.SubMenu("Combo").AddItem(new MenuItem("UseIgnite", "Use Ignite").SetValue(true));
             
             Config.AddSubMenu(new Menu("Harass", "Harass"));
-            Config.SubMenu("Harass").AddItem(new MenuItem("HarassActive", "Harass!").SetValue(new KeyBind("Z".ToCharArray()[0], KeyBindType.Press)));
+            Config.SubMenu("Harass").AddItem(new MenuItem("HarassActive", "Harass!").SetValue(new KeyBind("C".ToCharArray()[0], KeyBindType.Press)));
 			Config.SubMenu("Harass").AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
 			Config.SubMenu("Harass").AddItem(new MenuItem("HW", "Use W").SetValue(true));
             Config.SubMenu("Harass").AddItem(new MenuItem("HE", "Use E").SetValue(true));
             
             Config.AddSubMenu(new Menu("Farm", "Farm"));
-            Config.SubMenu("Farm").AddItem(new MenuItem("FreezeActive", "Freeze!").SetValue(new KeyBind("C".ToCharArray()[0], KeyBindType.Press)));
+            Config.SubMenu("Farm").AddItem(new MenuItem("FreezeActive", "Freeze!").SetValue(new KeyBind("X".ToCharArray()[0], KeyBindType.Press)));
             Config.SubMenu("Farm").AddItem(new MenuItem("LaneClearActive", "LaneClear!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
 			Config.SubMenu("Farm").AddItem(new MenuItem("FQ", "Use Q").SetValue(true));
 			Config.SubMenu("Farm").AddItem(new MenuItem("FW", "Use W").SetValue(true));
@@ -75,7 +78,7 @@ namespace LightningRyze
             Config.SubMenu("KillSteal").AddItem(new MenuItem("AutoIgnite", "Use Ignite").SetValue(true));
             
             Config.AddSubMenu(new Menu("Extra", "Extra"));
-            Config.SubMenu("Extra").AddItem(new MenuItem("UseWGap", "Use W GapClose").SetValue(true));
+            Config.SubMenu("Extra").AddItem(new MenuItem("UseWGap", "Use W GapCloser").SetValue(true));
             Config.SubMenu("Extra").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
                       
 			Config.AddSubMenu(new Menu("Drawings", "Drawings"));
@@ -94,7 +97,7 @@ namespace LightningRyze
                           
         private static void Game_OnGameUpdate(EventArgs args)
         {         
-        	target = SimpleTs.GetTarget(Q.Range, SimpleTs.DamageType.Magical);
+        	target = SimpleTs.GetTarget(Q.Range+25, SimpleTs.DamageType.Magical);
 			if (Config.Item("ComboActive").GetValue<KeyBind>().Active)
 			{
 				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) ComboMixed();
@@ -110,29 +113,29 @@ namespace LightningRyze
         private static void Drawing_OnDraw(EventArgs args)
         {
         	var drawQ = Config.Item("QRange").GetValue<Circle>();
-            if (drawQ.Active && !ObjectManager.Player.IsDead)
+            if (drawQ.Active && !myHero.IsDead)
             {
-                Utility.DrawCircle(ObjectManager.Player.Position, Q.Range, drawQ.Color);
+                Utility.DrawCircle(myHero.Position, Q.Range, drawQ.Color);
             }
 
             var drawWE = Config.Item("WERange").GetValue<Circle>();
-            if (drawWE.Active && !ObjectManager.Player.IsDead)
+            if (drawWE.Active && !myHero.IsDead)
             {
-                Utility.DrawCircle(ObjectManager.Player.Position, W.Range, drawWE.Color);
+                Utility.DrawCircle(myHero.Position, W.Range, drawWE.Color);
             }
         }
         
         private static void OrbwalkingOnBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
 		{
 			if (Config.Item("ComboActive").GetValue<KeyBind>().Active || Config.Item("HarassActive").GetValue<KeyBind>().Active)
-				args.Process = !(Q.IsReady() || W.IsReady() || E.IsReady() || ObjectManager.Player.Distance(args.Target) >= 600);
+				args.Process = !(Q.IsReady() || W.IsReady() || E.IsReady() || myHero.Distance(args.Target) >= 600);
 		}
         
         private static void AntiGapcloser_OnEnemyGapcloser(ActiveGapcloser gapcloser)
         {
         	var UseW = Config.Item("UseWGap").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-			if (ObjectManager.Player.HasBuff("Recall") || ObjectManager.Player.IsWindingUp) return;  
+			if (myHero.HasBuff("Recall") || myHero.IsWindingUp) return;  
         	if (UseW && W.IsReady()) W.CastOnUnit(gapcloser.Sender,UsePacket);
         }
         
@@ -164,49 +167,72 @@ namespace LightningRyze
         	}	
         }
         
+        private static bool IsFacing(Obj_AI_Base enemy)
+        {
+        	if (enemy.Path.Count() > 0 && enemy.Path[0].Distance(myHero.ServerPosition) > myHero.Distance(enemy))
+        		return false;
+        	else return true;	        	
+        }
+        
+       	public static bool IgniteKillable(Obj_AI_Hero source, Obj_AI_Base target)
+       	{
+       		return Damage.GetSummonerSpellDamage(myHero, target,Damage.SummonerSpell.Ignite) > target.Health;
+       	}
+       
+       	public static bool IsKillable(Obj_AI_Hero source, Obj_AI_Base target, IEnumerable<SpellSlot> spellCombo)
+       	{
+       		return Damage.GetComboDamage(source, target, spellCombo) > target.Health;
+       	}
+       	
+       	public static float GetDistanceSqr(Obj_AI_Hero source, Obj_AI_Base target)
+       	{
+       		return Vector2.DistanceSquared(source.Position.To2D(),target.ServerPosition.To2D());
+       	}
+        
        	private static void ComboMixed()
         {
         	var UseR = Config.Item("UseR").GetValue<bool>();
         	var UseIgnite = Config.Item("UseIgnite").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-        	if (target == null) return;
-        	if (UseIgnite && DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q,DamageLib.SpellType.E,DamageLib.SpellType.W,DamageLib.SpellType.IGNITE}))
+        	if (target == null) 
         	{
-        		if (IgniteSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && ObjectManager.Player.Distance(target) <= 600)
-					ObjectManager.Player.SummonerSpellbook.CastSpell(IgniteSlot, target);        			
+        		return;
+        	}
+        	if (UseIgnite && IgniteKillable(myHero,target))
+        	{
+        		if (IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && myHero.Distance(target) <= 600)
+					myHero.SummonerSpellbook.CastSpell(IgniteSlot, target);        			
         	}
         	if (Environment.TickCount - LastFlashTime < 1 && W.IsReady()) W.CastOnUnit(target,UsePacket);
         	else
         	{
-        		if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q}) && Q.IsReady())
+        		if (IsKillable(myHero,target, new[] {SpellSlot.Q}) && Q.IsReady())
         		{
         		  	Q.CastOnUnit(target,UsePacket);
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.E}) && E.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.E}) && E.IsReady())
         		{
         		  	E.CastOnUnit(target,UsePacket);       	
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.W}) && W.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.W}) && W.IsReady())
         		{
         		    W.CastOnUnit(target,UsePacket);                   	
         		}
-        		else if (ObjectManager.Player.Distance(target) >= 575 && target.Path.Count() > 0 &&
-													target.Path[0].Distance(ObjectManager.Player.ServerPosition) >
-														ObjectManager.Player.Distance(target) && W.IsReady())
+        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
+        		{
+        			Game.PrintChat("check");
         		    W.CastOnUnit(target,UsePacket);    
+        		}
 				else
 				{
-					var comboDmg = DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.Q).Level * 25)) + (0.4 * ObjectManager.Player.FlatMagicDamageMod + 0.065 * ObjectManager.Player.MaxMana ), target)  +
-					DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.W).Level * 35)) + (0.6 * ObjectManager.Player.FlatMagicDamageMod + 0.045 * ObjectManager.Player.MaxMana), target) +
-					DamageLib.CalcMagicDmg(((ObjectManager.Player.Spellbook.GetSpell(SpellSlot.E).Level * 20)) + (0.35 * ObjectManager.Player.FlatMagicDamageMod + 0.01 * ObjectManager.Player.MaxMana), target);
-					if ((Q.IsReady() && W.IsReady() && E.IsReady() && comboDmg > target.Health) || comboDmg > target.MaxHealth)
+					if (Q.IsReady() && W.IsReady() && E.IsReady() && IsKillable(myHero,target,new[] {SpellSlot.Q,SpellSlot.W,SpellSlot.E}))
 					{
 						if (Q.IsReady()) Q.CastOnUnit(target,UsePacket);
 						if (R.IsReady() && UseR) CastR();
 						if (W.IsReady()) W.CastOnUnit(target,UsePacket);
 						if (E.IsReady()) E.CastOnUnit(target,UsePacket);
 					}
-					else if (Math.Abs(ObjectManager.Player.PercentCooldownMod) >= 0.2)
+					else if (Math.Abs(myHero.PercentCooldownMod) >= 0.2)
 					{
 						if (CountEnemyInRange(target,300) > 1)
 						{
@@ -251,29 +277,27 @@ namespace LightningRyze
         	var UseIgnite = Config.Item("UseIgnite").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
         	if (target == null) return;
-        	if (UseIgnite && DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q,DamageLib.SpellType.E,DamageLib.SpellType.W,DamageLib.SpellType.IGNITE}))
+        	if (UseIgnite && IgniteKillable(myHero,target))
         	{
-        		if (IgniteSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && ObjectManager.Player.Distance(target) <= 600)
-					ObjectManager.Player.SummonerSpellbook.CastSpell(IgniteSlot, target);        			
+        		if (IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && myHero.Distance(target) <= 600)
+					myHero.SummonerSpellbook.CastSpell(IgniteSlot, target);        			
         	}
         	if (Environment.TickCount - LastFlashTime < 1 && W.IsReady()) W.CastOnUnit(target ,UsePacket);
         	else
         	{
-        		if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q}) && Q.IsReady())
+        		if (IsKillable(myHero,target, new[] {SpellSlot.Q}) && Q.IsReady())
         		{
         		  	Q.CastOnUnit(target,UsePacket);
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.E}) && E.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.E}) && E.IsReady())
         		{
         		  	E.CastOnUnit(target,UsePacket);       	
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.W}) && W.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.W}) && W.IsReady())
         		{
         		    W.CastOnUnit(target,UsePacket);     		    
         		}
-        		else if (ObjectManager.Player.Distance(target) >= 575 && target.Path.Count() > 0 &&
-														target.Path[0].Distance(ObjectManager.Player.ServerPosition) >
-														ObjectManager.Player.Distance(target) && W.IsReady())
+        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
         		    W.CastOnUnit(target,UsePacket);
         		else
         		{
@@ -291,29 +315,27 @@ namespace LightningRyze
         	var UseIgnite = Config.Item("UseIgnite").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
         	if (target == null) return;
-        	if (UseIgnite && DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q,DamageLib.SpellType.E,DamageLib.SpellType.W,DamageLib.SpellType.IGNITE}))
+        	if (UseIgnite && IgniteKillable(myHero,target))
         	{
-        		if (IgniteSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && ObjectManager.Player.Distance(target) <= 600)
-					ObjectManager.Player.SummonerSpellbook.CastSpell(IgniteSlot, target);        				
+        		if (IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && myHero.Distance(target) <= 600)
+					myHero.SummonerSpellbook.CastSpell(IgniteSlot, target);        				
         	}
         	if (Environment.TickCount - LastFlashTime < 1 && W.IsReady()) W.CastOnUnit(target ,UsePacket);
         	else
         	{
-        		if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.Q}) && Q.IsReady())
+        		if (IsKillable(myHero,target, new[] {SpellSlot.Q}) && Q.IsReady())
         		{
         		  	Q.CastOnUnit(target,UsePacket);
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.E}) && E.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.E}) && E.IsReady())
         		{
         		  	E.CastOnUnit(target,UsePacket);       	
         		}
-        		else if (DamageLib.IsKillable(target, new[] {DamageLib.SpellType.W}) && W.IsReady())
+        		else if (IsKillable(myHero,target, new[] {SpellSlot.W}) && W.IsReady())
         		{
         		    W.CastOnUnit(target,UsePacket);                   	
         		}
-        		else if (ObjectManager.Player.Distance(target) >= 575 && target.Path.Count() > 0 &&
-														target.Path[0].Distance(ObjectManager.Player.ServerPosition) >
-														ObjectManager.Player.Distance(target) && W.IsReady())
+        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
         		    W.CastOnUnit(target,UsePacket);
         		else
         		{
@@ -352,7 +374,7 @@ namespace LightningRyze
         	var UseW = Config.Item("HW").GetValue<bool>();
         	var UseE = Config.Item("HE").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-        	if (ObjectManager.Player.Distance(target) <= 625 )
+        	if (myHero.Distance(target) <= 625 )
         	{
         		if (UseQ && Q.IsReady()) Q.CastOnUnit(target,UsePacket);
         		if (UseW && W.IsReady()) W.CastOnUnit(target,UsePacket);
@@ -366,15 +388,15 @@ namespace LightningRyze
         	var UseW = Config.Item("FW").GetValue<bool>();
         	var UseE = Config.Item("FE").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-        	var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range,MinionTypes.All,MinionTeam.All, MinionOrderTypes.MaxHealth);
+        	var allMinions = MinionManager.GetMinions(myHero.ServerPosition, Q.Range,MinionTypes.All,MinionTeam.All, MinionOrderTypes.MaxHealth);
         	if (Config.Item("FreezeActive").GetValue<KeyBind>().Active)
         	{
         		if (UseQ && Q.IsReady())
 				{
         			foreach (var minion in allMinions)
 					{
-						if (minion.IsValidTarget() && HealthPrediction.GetHealthPrediction(minion,(int)(ObjectManager.Player.Distance(minion) * 1000 / 1400)) <=
-																						DamageLib.getDmg(minion, DamageLib.SpellType.Q) - 10)
+						if (minion.IsValidTarget() && HealthPrediction.GetHealthPrediction(minion,(int)(myHero.Distance(minion) * 1000 / 1400)) <=
+        				    Damage.GetComboDamage(myHero,minion,new[] {SpellSlot.Q}))
 						{
 							Q.CastOnUnit(minion,UsePacket);
 							return;
@@ -385,7 +407,7 @@ namespace LightningRyze
 				{
 					foreach (var minion in allMinions)
 					{
-						if (minion.IsValidTarget(W.Range) && minion.Health < DamageLib.getDmg(minion, DamageLib.SpellType.W) - 10)
+						if (minion.IsValidTarget(W.Range) && minion.Health < Damage.GetComboDamage(myHero,minion,new[] {SpellSlot.W}))
 						{
 							W.CastOnUnit(minion,UsePacket);
 							return;
@@ -396,8 +418,8 @@ namespace LightningRyze
 				{
 					foreach (var minion in allMinions)
 					{
-						if (minion.IsValidTarget(E.Range) && HealthPrediction.GetHealthPrediction(minion,(int)(ObjectManager.Player.Distance(minion) * 1000 / 1000)) <=
-																	DamageLib.getDmg(minion, DamageLib.SpellType.E) - 10)
+						if (minion.IsValidTarget(E.Range) && HealthPrediction.GetHealthPrediction(minion,(int)(myHero.Distance(minion) * 1000 / 1000)) <=
+																	Damage.GetComboDamage(myHero,minion,new[] {SpellSlot.E}))
 						{
 							E.CastOnUnit(minion,UsePacket);
 							return;
@@ -422,7 +444,7 @@ namespace LightningRyze
         	var UseW = Config.Item("JW").GetValue<bool>();
         	var UseE = Config.Item("JE").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-        	var jungminions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range,MinionTypes.All,MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+        	var jungminions = MinionManager.GetMinions(myHero.ServerPosition, Q.Range,MinionTypes.All,MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
 			if (jungminions.Count > 0)
 			{
 				var minion = jungminions[0];
@@ -437,21 +459,21 @@ namespace LightningRyze
         	var AutoIgnite = Config.Item("AutoIgnite").GetValue<bool>();
         	var KillSteal = Config.Item("KillSteal").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
-        	if (AutoIgnite && IgniteSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready)
+        	if (AutoIgnite && IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready)
         	{
-        		foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => ObjectManager.Player.Distance(enemy) <= 600 && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead))
+        		foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => myHero.Distance(enemy) <= 600 && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead))
         		{
-        			if (DamageLib.IsKillable(enemy, new[] {DamageLib.SpellType.IGNITE}))
-						ObjectManager.Player.SummonerSpellbook.CastSpell(IgniteSlot, enemy);        				
+        			if (IgniteKillable(myHero,enemy))
+						myHero.SummonerSpellbook.CastSpell(IgniteSlot, enemy);        				
         		}
         	}
         	if (KillSteal & (Q.IsReady() || W.IsReady() || E.IsReady()))
         	{
-        		foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => ObjectManager.Player.Distance(enemy) <= Q.Range && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead))
+        		foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => myHero.Distance(enemy) <= Q.Range && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead))
         		{
-        			if (Q.IsReady() && DamageLib.IsKillable(enemy, new[] {DamageLib.SpellType.Q})) Q.CastOnUnit(enemy,UsePacket);
-        			if (W.IsReady() && DamageLib.IsKillable(enemy, new[] {DamageLib.SpellType.W})) W.CastOnUnit(enemy,UsePacket);
-        			if (E.IsReady() && DamageLib.IsKillable(enemy, new[] {DamageLib.SpellType.E})) E.CastOnUnit(enemy,UsePacket);
+        			if (Q.IsReady() && IsKillable(myHero,enemy, new[] {SpellSlot.Q})) Q.CastOnUnit(enemy,UsePacket);
+        			if (W.IsReady() && IsKillable(myHero,enemy, new[] {SpellSlot.W})) W.CastOnUnit(enemy,UsePacket);
+        			if (E.IsReady() && IsKillable(myHero,enemy, new[] {SpellSlot.E})) E.CastOnUnit(enemy,UsePacket);
         		}
         	
         	}
@@ -467,7 +489,7 @@ namespace LightningRyze
         private static int CountEnemyInRange(Obj_AI_Hero target,float range)
         {
         	int count = 0;
-            foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => ObjectManager.Player.Distance3D(enemy,true) <= range*range && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead)) 
+            foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => myHero.Distance3D(enemy,true) <= range*range && enemy.IsEnemy && enemy.IsVisible && !enemy.IsDead)) 
             {
         		count = count + 1 ;
             }
