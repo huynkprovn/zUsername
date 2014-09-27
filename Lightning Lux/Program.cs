@@ -89,7 +89,7 @@ namespace LightningLux
             Config.SubMenu("AutoShield").AddItem(new MenuItem("MP", "My MP %").SetValue(new Slider(30,100,0)));
                     
             Config.AddSubMenu(new Menu("ExtraSettings", "ExtraSettings"));
-            Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UseQE", "Use E if target trapped").SetValue(false));
+            Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UseQE", "Only E if target trapped").SetValue(false));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("AutoE2", "Auto use E2").SetValue(true));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UseQGap", "Use Q GapCloser").SetValue(true));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
