@@ -1,4 +1,4 @@
-﻿#region
+#region
 using System;
 using System.Collections.Generic;
 using Color = System.Drawing.Color;
@@ -89,6 +89,7 @@ namespace LightningLux
             Config.SubMenu("AutoShield").AddItem(new MenuItem("MP", "My MP %").SetValue(new Slider(30,100,0)));
                     
             Config.AddSubMenu(new Menu("ExtraSettings", "ExtraSettings"));
+            Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UseQE", "Only E if target trapped").SetValue(false));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("AutoE2", "Auto use E2").SetValue(true));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UseQGap", "Use Q GapCloser").SetValue(true));
             Config.SubMenu("ExtraSettings").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
@@ -187,7 +188,11 @@ namespace LightningLux
             if (drawE.Active && !myHero.IsDead)
             {
                 Utility.DrawCircle(myHero.Position, W.Range, drawE.Color);
-            }          
+            }   
+			if (Config.Item("JungSteal").GetValue<KeyBind>().Active && !myHero.IsDead)  
+			{
+				Utility.DrawCircle(Game.CursorPos, 1000, Color.White);
+			}
         }
         
         private static void OrbwalkingOnBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
@@ -227,12 +232,12 @@ namespace LightningLux
        
        	public static bool IgniteKillable(Obj_AI_Hero source, Obj_AI_Base target)
        	{
-       		return Damage.GetSummonerSpellDamage(myHero, target,Damage.SummonerSpell.Ignite) > target.Health;
+       		return Damage.GetSummonerSpellDamage(myHero, target,Damage.SummonerSpell.Ignite) >= target.Health;
        	}
        
        	public static bool IsKillable(Obj_AI_Hero source, Obj_AI_Base target, IEnumerable<SpellSlot> spellCombo)
        	{
-       		return Damage.GetComboDamage(source, target, spellCombo) > target.Health;
+       		return Damage.GetComboDamage(source, target, spellCombo) >= target.Health;
        	}
        	
        	public static float GetDistanceSqr(Obj_AI_Hero source, Obj_AI_Base target)
@@ -269,6 +274,7 @@ namespace LightningLux
         	var UseItems = Config.Item("UseItems").GetValue<bool>();
         	var UseIgnite = Config.Item("UseIgnite").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
+        	var UseQE = Config.Item("UseQE").GetValue<bool>();
         	if (target == null) return;
         	
         	if (UseItems && ComboDamage(target) && GetDistanceSqr(myHero,target) <= 750 * 750)
@@ -288,8 +294,19 @@ namespace LightningLux
         	}
         	if (UseE && E.IsReady() && GetDistanceSqr(myHero,target) <= E.Range * E.Range)
         	{
-				E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
-				CastE2();
+        		if (UseQE)
+        		{
+        			if (target.HasBuff("LuxLightBindingMis"))
+        			{
+						E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+						CastE2();
+        			}
+        		}
+        		else
+        		{
+        			E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+					CastE2();
+        		}
         		if (target.IsValidTarget(550) && target.HasBuff("luxilluminatingfraulein"))
         			myHero.IssueOrder(GameObjectOrder.AttackUnit, target);
         	}
@@ -313,6 +330,7 @@ namespace LightningLux
         	var UseQ = Config.Item("HQ").GetValue<bool>();
         	var UseE = Config.Item("HE").GetValue<bool>();
         	var UsePacket = Config.Item("UsePacket").GetValue<bool>();
+        	var UseQE = Config.Item("UseQE").GetValue<bool>();
         	if (target == null) return;
         	if (UseQ && Q.IsReady() && GetDistanceSqr(myHero,target) <= Q.Range * Q.Range)
         	{
@@ -322,8 +340,19 @@ namespace LightningLux
         	}
         	if (UseE && E.IsReady() && GetDistanceSqr(myHero,target) <= E.Range * E.Range)
         	{
-				E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
-				CastE2();
+        	    if (UseQE)
+        		{
+        			if (target.HasBuff("LuxLightBindingMis"))
+        			{
+						E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+						CastE2();
+        			}
+        		}
+        		else
+        		{
+        			E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+					CastE2();
+        		}
         		if (target.IsValidTarget(550) && target.HasBuff("luxilluminatingfraulein"))
         			myHero.IssueOrder(GameObjectOrder.AttackUnit, target);
         	}

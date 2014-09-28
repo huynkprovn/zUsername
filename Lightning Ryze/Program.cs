@@ -240,7 +240,6 @@ namespace LightningRyze
         		}
         		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
         		{
-        			Game.PrintChat("check");
         		    W.CastOnUnit(target,UsePacket);    
         		}
 				else
