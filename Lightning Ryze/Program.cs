@@ -18,6 +18,7 @@ namespace LightningRyze
         private static float LastFlashTime;
         private static Obj_AI_Hero target;
         private static Obj_AI_Hero myHero;
+        private static bool UseShield;
        	private static Spell Q;
 		private static Spell W;
 		private static Spell E;
@@ -78,6 +79,8 @@ namespace LightningRyze
             Config.SubMenu("KillSteal").AddItem(new MenuItem("AutoIgnite", "Use Ignite").SetValue(true));
             
             Config.AddSubMenu(new Menu("Extra", "Extra"));
+            Config.SubMenu("Extra").AddItem(new MenuItem("UseSera", "Use Seraphs Embrace").SetValue(true));
+            Config.SubMenu("Extra").AddItem(new MenuItem("HP", "When % HP").SetValue(new Slider(20,100,0)));
             Config.SubMenu("Extra").AddItem(new MenuItem("UseWGap", "Use W GapCloser").SetValue(true));
             Config.SubMenu("Extra").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
                       
@@ -108,6 +111,7 @@ namespace LightningRyze
 			if (Config.Item("LaneClearActive").GetValue<KeyBind>().Active ||
 			    Config.Item("FreezeActive").GetValue<KeyBind>().Active) Farm();
 			if (Config.Item("JungActive").GetValue<KeyBind>().Active) JungleFarm();
+			if (Config.Item("UseSera").GetValue<bool>()) UseItems();
         }
         
         private static void Drawing_OnDraw(EventArgs args)
@@ -165,6 +169,11 @@ namespace LightningRyze
         			LastFlashTime = Environment.TickCount;
         		}
         	}	
+        	if (sender.IsEnemy && (sender.Type == GameObjectType.obj_AI_Hero || sender.Type == GameObjectType.obj_AI_Turret))
+        	{
+        		if (SpellData.SpellName.Any(Each => Each.Contains(args.SData.Name)) || (args.Target == myHero && myHero.Distance(sender) <= 700))
+        			UseShield = true;
+        	}
         }
         
         private static bool IsFacing(Obj_AI_Base enemy)
@@ -187,6 +196,17 @@ namespace LightningRyze
        	public static float GetDistanceSqr(Obj_AI_Hero source, Obj_AI_Base target)
        	{
        		return Vector2.DistanceSquared(source.Position.To2D(),target.ServerPosition.To2D());
+       	}
+       	
+       	private static void UseItems()
+       	{
+       		var myHP = myHero.Health/myHero.MaxHealth*100;
+       		var ConfigHP = Config.Item("HP").GetValue<Slider>().Value;
+       		if (myHP <= ConfigHP && Items.HasItem(3040) && Items.CanUseItem(3040) && UseShield) 
+       		{
+       			Items.UseItem(3040);
+       			UseShield = false;
+       		}
        	}
         
        	private static void ComboMixed()
