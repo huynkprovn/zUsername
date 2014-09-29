@@ -238,7 +238,7 @@ namespace LightningRyze
         		{
         		    W.CastOnUnit(target,UsePacket);                   	
         		}
-        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
+        		else if (myHero.Distance(target) >= 575 && !IsFacing(target) && W.IsReady())
         		{
         		    W.CastOnUnit(target,UsePacket);    
         		}
@@ -316,7 +316,7 @@ namespace LightningRyze
         		{
         		    W.CastOnUnit(target,UsePacket);     		    
         		}
-        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
+        		else if (myHero.Distance(target) >= 575 && !IsFacing(target) && W.IsReady())
         		    W.CastOnUnit(target,UsePacket);
         		else
         		{
@@ -354,7 +354,7 @@ namespace LightningRyze
         		{
         		    W.CastOnUnit(target,UsePacket);                   	
         		}
-        		else if (GetDistanceSqr(myHero,target) >= 575 * 575 && !IsFacing(target) && W.IsReady())
+        		else if (myHero.Distance(target) >= 575 && !IsFacing(target) && W.IsReady())
         		    W.CastOnUnit(target,UsePacket);
         		else
         		{
