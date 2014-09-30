@@ -237,7 +237,7 @@ namespace LightningLux
        
        	public static bool IsKillable(Obj_AI_Hero source, Obj_AI_Base target, IEnumerable<SpellSlot> spellCombo)
        	{
-       		return Damage.GetComboDamage(source, target, spellCombo) >= target.Health;
+       		return Damage.GetComboDamage(source, target, spellCombo) > target.Health;
        	}
        	
        	public static float GetDistanceSqr(Obj_AI_Hero source, Obj_AI_Base target)
