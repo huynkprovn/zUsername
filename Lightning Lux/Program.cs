@@ -237,7 +237,7 @@ namespace LightningLux
        
        	public static bool IsKillable(Obj_AI_Hero source, Obj_AI_Base target, IEnumerable<SpellSlot> spellCombo)
        	{
-       		return Damage.GetComboDamage(source, target, spellCombo) > target.Health;
+       		return (Damage.GetComboDamage(source, target, spellCombo)-25) > target.Health;
        	}
        	
        	public static float GetDistanceSqr(Obj_AI_Hero source, Obj_AI_Base target)
@@ -290,7 +290,7 @@ namespace LightningLux
         	}
         	if (UseW && W.IsReady() && IsFacing(target) && myHero.Distance(target) <= 550)
         	{
-        		W.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+        		W.Cast(target,UsePacket);
         	}
         	if (UseE && E.IsReady() && GetDistanceSqr(myHero,target) <= E.Range * E.Range)
         	{
@@ -298,7 +298,7 @@ namespace LightningLux
         		{
         			if (target.HasBuff("LuxLightBindingMis"))
         			{
-						E.CastIfHitchanceEquals(target, HitChance.High ,UsePacket);
+						E.Cast(target ,UsePacket);
 						CastE2();
         			}
         		}
@@ -310,17 +310,18 @@ namespace LightningLux
         		if (target.IsValidTarget(550) && target.HasBuff("luxilluminatingfraulein"))
         			myHero.IssueOrder(GameObjectOrder.AttackUnit, target);
         	}
-        	if (UseR && R.IsReady())
+        	if (UseR && R.IsReady() && IsKillable(myHero,target,new[] {SpellSlot.R}))
         	{
-        		foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(R.Range) && hero.IsEnemy && IsKillable(myHero,hero,new[] {SpellSlot.R})))
-       			{
-					R.CastIfHitchanceEquals(hero, HitChance.High ,UsePacket);
-       			}	
+        		if (target.Health <= Damage.GetAutoAttackDamage(myHero,target,true) && myHero.Distance(target) < 550)
+        				myHero.IssueOrder(GameObjectOrder.AttackUnit, target);
+				else R.Cast(target ,UsePacket);					
         	}
         	if (UseIgnite && IgniteKillable(myHero,target))
         	{
         		if (IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && myHero.Distance(target) <= 600)
-					myHero.SummonerSpellbook.CastSpell(IgniteSlot, target);     		
+        			if (target.Health <= Damage.GetAutoAttackDamage(myHero,target,true) && myHero.Distance(target) < 550)
+        				myHero.IssueOrder(GameObjectOrder.AttackUnit, target);
+					else myHero.SummonerSpellbook.CastSpell(IgniteSlot, target);     		
         	}
         }
        	
@@ -399,12 +400,18 @@ namespace LightningLux
         			}
         			else if (UseR && R.IsReady() && hero.IsValidTarget(R.Range) && IsKillable(myHero,hero,new[] {SpellSlot.R}))
         			{
-						R.CastIfHitchanceEquals(hero, HitChance.High ,UsePacket);
+        				if (hero.Health <= Damage.GetAutoAttackDamage(myHero,hero,true) && myHero.Distance(hero) < 550)
+        					myHero.IssueOrder(GameObjectOrder.AttackUnit, hero);
+        				else R.Cast(hero ,UsePacket);						
         			}
         			else if (UseIgnite && IgniteKillable(myHero,hero))
 					{
 						if (IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready && myHero.Distance(hero) <= 600)
-							myHero.SummonerSpellbook.CastSpell(IgniteSlot, hero);   
+						{
+							if (hero.Health <= Damage.GetAutoAttackDamage(myHero,hero,true) && myHero.Distance(hero) < 550)
+								myHero.IssueOrder(GameObjectOrder.AttackUnit, hero);
+							else myHero.SummonerSpellbook.CastSpell(IgniteSlot, hero);  	
+						}
 					}
        		 	}	
         	}
