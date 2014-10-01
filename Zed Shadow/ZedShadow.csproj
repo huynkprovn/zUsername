@@ -14,6 +14,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <PreBuildEvent />
     <NoWin32Manifest>False</NoWin32Manifest>
+    <OutputPath>bin\Release</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -36,13 +37,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LeagueSharp">
-      <HintPath>..\..\Assemblies\System\LeagueSharp.dll</HintPath>
+      <HintPath>C:\Users\Administrator\Desktop\L#\System\LeagueSharp.dll</HintPath>
     </Reference>
     <Reference Include="LeagueSharp.Common">
-      <HintPath>..\..\Assemblies\System\LeagueSharp.Common.dll</HintPath>
+      <HintPath>C:\Users\Administrator\Desktop\L#\System\LeagueSharp.Common.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX">
-      <HintPath>..\..\Assemblies\System\SharpDX.dll</HintPath>
+      <HintPath>C:\Users\Administrator\Desktop\L#\System\SharpDX.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
