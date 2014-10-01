@@ -384,7 +384,7 @@ namespace ZedShadow
  				{
  					if (myHero.Spellbook.GetSpell(SpellSlot.W).Name != "zedw2" && W.IsReady() && ( (myHero.Distance(target) < 700) || (myHero.Distance(target) > 125 && !R.IsReady()) ) )
  					{
- 						if (!(NoWWhenUlt && ( (myHero.Spellbook.GetSpell(SpellSlot.R).Name == "ZedR2") || rClone != null ) ))
+ 						if (!NoWWhenUlt && !( (myHero.Spellbook.GetSpell(SpellSlot.R).Name == "ZedR2") || rClone != null ) )
  						{
  							if (MyMana > (WMana+EMana)) W.Cast(target,UsePacket);
  						}
