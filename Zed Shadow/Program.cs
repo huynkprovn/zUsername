@@ -1,4 +1,4 @@
-﻿#region
+#region
 using System;
 using System.Collections.Generic;
 using Color = System.Drawing.Color;
@@ -107,6 +107,7 @@ namespace ZedShadow
 			Config.SubMenu("Farm").AddItem(new MenuItem("FarmE", "Use E").SetValue(true));          
                     
             Config.AddSubMenu(new Menu("Misc", "Misc"));
+             Config.SubMenu("Misc").AddItem(new MenuItem("Movement", "Move to Mouse in combo").SetValue(false));
             Config.SubMenu("Misc").AddItem(new MenuItem("autoIgnite", "KS with Ignite").SetValue(true));
             Config.SubMenu("Misc").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
                       
@@ -123,7 +124,7 @@ namespace ZedShadow
 			GameObject.OnCreate += OnCreateObject;
 			GameObject.OnDelete += OnDeleteObject;
 			Drawing.OnDraw += Drawing_OnDraw;
-			Obj_AI_Base.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast; 				
+			Obj_AI_Base.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast; 		
         }
                           
         private static void Game_OnGameUpdate(EventArgs args)
@@ -146,12 +147,15 @@ namespace ZedShadow
         	}
 			if (Config.Item("Fight").GetValue<KeyBind>().Active) 
 			{
+				if (Config.Item("Movement").GetValue<bool>()) Orbwalker.SetAttacks(false);
 				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) Fight();
 				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) Fight2();
 			}
-			else if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
+			else Orbwalker.SetAttacks(true);
+			if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
 				Harass();
         }
+        
         
         private static void CloneCheck()
         {
@@ -490,7 +494,7 @@ namespace ZedShadow
  			{
  				if (Q.IsReady() && W.IsReady() && (myHero.Distance(target) < 800) && (MyMana > QMana+WMana+EMana))
  				{
- 					if (myHero.Spellbook.GetSpell(SpellSlot.W).Name != "zedw2")
+ 					if (myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash")
 					{
 						if (Environment.TickCount > lastW + 1000)
 						{
