@@ -14,7 +14,7 @@ namespace ZedShadow
     {
     	private static Orbwalking.Orbwalker Orbwalker;
         private static Menu Config;
-        private static Obj_AI_Hero target;
+        private static Obj_AI_Hero Target;
         private static Obj_AI_Hero myHero;
        	private static Spell Q;
 		private static Spell W;
@@ -42,6 +42,8 @@ namespace ZedShadow
 		private static bool CloneRFound;
 		private static int CloneRTick;
 		private static Vector3 CloneRNearPosition;
+		
+		private static bool wcast = false;
 		
         private static void Main(string[] args)
         {
@@ -107,7 +109,7 @@ namespace ZedShadow
 			Config.SubMenu("Farm").AddItem(new MenuItem("FarmE", "Use E").SetValue(true));          
                     
             Config.AddSubMenu(new Menu("Misc", "Misc"));
-             Config.SubMenu("Misc").AddItem(new MenuItem("Movement", "Move to Mouse in combo").SetValue(false));
+            Config.SubMenu("Misc").AddItem(new MenuItem("Movement", "Move to Mouse in combo").SetValue(false));
             Config.SubMenu("Misc").AddItem(new MenuItem("autoIgnite", "KS with Ignite").SetValue(true));
             Config.SubMenu("Misc").AddItem(new MenuItem("UsePacket", "Use Packet Cast").SetValue(true));
                       
@@ -129,31 +131,34 @@ namespace ZedShadow
                           
         private static void Game_OnGameUpdate(EventArgs args)
         {     
+        	
 			UpdateMana();
 			autoIgnite();
 			CloneCheck();
+			if (wClone != null ) wcast = true;
+			if (wClone == null ) wcast = false;
 			if (RCastTick < Environment.TickCount - 5000) UseSwap = true;
 
-			if (Q.IsReady() && E.IsReady() && W.IsReady()) target = SimpleTs.GetTarget(1200, SimpleTs.DamageType.Physical);
- 			else target = SimpleTs.GetTarget(900, SimpleTs.DamageType.Physical);
+			if (Q.IsReady() && E.IsReady() && W.IsReady()) Target = SimpleTs.GetTarget(1200, SimpleTs.DamageType.Physical);
+ 			else Target = SimpleTs.GetTarget(900, SimpleTs.DamageType.Physical);
         	
         	if (myHero.Spellbook.GetSpell(SpellSlot.R).Name == "ZedR2")
         	{
  				foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => enemy.IsEnemy && enemy.IsValidTarget(1200)))
  				{
  					if (enemy.HasBuff("zedulttargetmark")) 
- 						target = enemy;
+ 						Target = enemy;
  				}
         	}
 			if (Config.Item("Fight").GetValue<KeyBind>().Active) 
 			{
 				if (Config.Item("Movement").GetValue<bool>()) Orbwalker.SetAttacks(false);
-				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) Fight();
-				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) Fight2();
+				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) Fight(Target);
+				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) Fight2(Target);
 			}
 			else Orbwalker.SetAttacks(true);
 			if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
-				Harass();
+				Harass(Target);
         }
         
         
@@ -342,7 +347,7 @@ namespace ZedShadow
         	}
         }
  		
- 		private static void Swap()
+ 		private static void Swap(Obj_AI_Hero target)
  		{
  			float wDist = 0;
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
@@ -368,7 +373,7 @@ namespace ZedShadow
             return ChampCount;
         }
         		
- 		private static void Fight()
+ 		private static void Fight(Obj_AI_Hero target)
  		{
  			var wSwap = Config.Item("wSwap").GetValue<bool>();
  			var rSwap = Config.Item("rSwap").GetValue<bool>();
@@ -376,14 +381,14 @@ namespace ZedShadow
  			var igniteOptions = Config.Item("igniteOptions").GetValue<bool>();
  			var SwapUlt = Config.Item("SwapUlt").GetValue<Slider>().Value;
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
- 			if (wSwap) Swap();
+ 			if (wSwap) Swap(target);
 	
  			if (target == null) return;
  			
  			if ( !target.HasBuff("JudicatorIntervention") || !target.HasBuff("Undying Rage") )
  			{
  				if (R.IsReady() && MyMana > (QMana + EMana)) 
- 					CastR();
+ 					CastR(target);
  				if (!R.IsReady() || rClone != null )
  				{
  					if (myHero.Spellbook.GetSpell(SpellSlot.W).Name != "zedw2" && W.IsReady() && ( (myHero.Distance(target) < 700) || (myHero.Distance(target) > 125 && !R.IsReady()) ) )
@@ -395,13 +400,11 @@ namespace ZedShadow
  					}	
  					if ((!W.IsReady() || wClone != null || NoWWhenUlt || wUsed) && (!R.IsReady() || rClone != null))
  					{ 						
- 						if (E.IsReady()) CastE();
- 						if (Q.IsReady() && myHero.Distance(target) < Q.Range && ((myHero.Spellbook.CanUseSpell(SpellSlot.R) == SpellState.Cooldown) ||
- 						                                                         (myHero.Spellbook.CanUseSpell(SpellSlot.R) == SpellState.NotLearned) ||
- 						                                                         (rClone != null)))
- 						{
- 							CastQ();
- 						}
+ 						CastE(target);
+ 						if (myHero.Spellbook.CanUseSpell(SpellSlot.R) == SpellState.Cooldown ||
+ 						                    myHero.Spellbook.CanUseSpell(SpellSlot.R) == SpellState.NotLearned ||
+ 						                    rClone != null)
+ 							CastQ(target);
  					}
  				}
  			}
@@ -442,14 +445,14 @@ namespace ZedShadow
  			} 							
  		}
  		
- 		private static void Fight2()
+ 		private static void Fight2(Obj_AI_Hero target)
  		{
  			var wSwap = Config.Item("wSwap").GetValue<bool>();
  			var rSwap = Config.Item("rSwap").GetValue<bool>();
  			var igniteOptions = Config.Item("igniteOptions").GetValue<bool>();
  			var SwapUlt = Config.Item("SwapUlt").GetValue<Slider>().Value;
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
- 			if (wSwap) Swap();
+ 			if (wSwap) Swap(target);
 
  			if (target == null) return;
 
@@ -461,9 +464,9 @@ namespace ZedShadow
 				}
 					
 				if (!W.IsReady() || wClone != null || wUsed)
-				{
-					if (E.IsReady()) CastE();
-					if (Q.IsReady()) CastQ();
+				{					
+					CastE(target);
+					CastQ(target);						
 				}					
 			}			 			
 			if (igniteOptions && target.HasBuff("zedulttargetmark") && IgniteSlot != SpellSlot.Unknown && myHero.SummonerSpellbook.CanUseSpell(IgniteSlot) == SpellState.Ready
@@ -485,80 +488,102 @@ namespace ZedShadow
  				R.Cast();
  		}
  		
- 		private static void Harass()
+ 		private static void Harass(Obj_AI_Hero target)
  		{
- 			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
  			if (target == null) return;
+ 			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
  			var mode = Config.Item("mode").GetValue<bool>();
  			if (mode)
  			{
+ 				
+ 				
  				if (Q.IsReady() && W.IsReady() && (myHero.Distance(target) < 800) && (MyMana > QMana+WMana+EMana))
  				{
- 					if (myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash")
+ 					if (Environment.TickCount > (lastW + 1000) && wcast == false && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash")
 					{
-						if (Environment.TickCount > lastW + 1000)
-						{
 							W.Cast(target,UsePacket);
-							if (wUsed) E.Cast();		
-						}				
+							if (wUsed) E.Cast();					
 					}
  				}
- 				if (wUsed) CastQ();
+ 				if (wUsed) CastQ(target);
  				if (!W.IsReady())
  				{
- 					CastQ();
- 					CastQClone();
+ 					CastQ(target);
+ 					CastQClone(target);
  				}
- 				CastE();
+ 				CastE(target);
  				if (myHero.Distance(target) < 1450 && myHero.Distance(target) > 900)
  				{
  					var DashPos = myHero.Position + Vector3.Normalize(target.Position - myHero.Position) * 550;
  					if (Q.IsReady() && W.IsReady() && (MyMana > QMana+WMana))
  					{
- 						if (myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash") W.Cast(DashPos,UsePacket);
+ 						if (wcast == false && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash") W.Cast(DashPos,UsePacket);
  					}
- 					if (wClone != null) CastQClone();
+ 					if (wClone != null) CastQClone(target);
  				}
  			}
  			else
  			{
- 				if (Q.IsReady() && myHero.Distance(target) < Q.Range) CastQ();
- 				else if (E.IsReady() && myHero.Distance(target) < 280) CastE();
+ 				if (Q.IsReady() && myHero.Distance(target) < Q.Range) CastQ(target);
+ 				else if (E.IsReady() && myHero.Distance(target) < 280) CastE(target);
  				else if (wClone != null)
  				{
- 					CastE();
- 					CastQClone();
+ 					CastE(target);
+ 					CastQClone(target);
  				}
  			}
  		}
  		
- 		private static void CastQ()
+ 		private static void CastQ(Obj_AI_Hero enemy)
  		{
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
- 			if (target.Distance(myHero) <= Q.Range || target.Distance(wClone) <= Q.Range || target.Distance(rClone) <= Q.Range)
- 				Q.Cast(target,UsePacket);			
+ 			if (Q.IsReady())
+ 			{
+ 				if (enemy.Distance(myHero) <= Q.Range || enemy.Distance(wClone) <= Q.Range || enemy.Distance(rClone) <= Q.Range)
+ 				{
+ 					Q.Cast(enemy,UsePacket);	
+ 				}
+ 			}
+ 			else return;
  		}
  		
- 		private static void CastQClone()
+ 		private static void CastQClone(Obj_AI_Hero enemy)
  		{
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
- 			if (Q.IsReady() && target.Distance(wClone) < Q.Range)
- 				Q.Cast(target,UsePacket);
+ 			if (Q.IsReady()) 
+ 			{
+ 				if(enemy.Distance(wClone) < Q.Range)
+ 				{
+ 					Q.Cast(enemy,UsePacket);
+
+ 				}
+ 			}
+ 			else return;
  		}
  		
  		
-        private static void CastE()
+        private static void CastE(Obj_AI_Hero enemy)
 		{
-        	if (target.Distance(myHero) <= 280 || target.Distance(wClone) <= 280 || target.Distance(rClone) <= 280)			
-				E.Cast();
+        	if (E.IsReady())
+        	{
+        		if (enemy.Distance(myHero) <= 280 || enemy.Distance(wClone) <= 280 || enemy.Distance(rClone) <= 280)	
+        		{
+					E.Cast();
+
+        		}
+        	}
+        	else return;
 		}
 
- 		private static void CastR()
+ 		private static void CastR(Obj_AI_Hero enemy)
  		{
  			var UsePacket = Config.Item("UsePacket").GetValue<bool>();
  			if (!R.IsReady()) return;
- 			if (myHero.Distance(target) <= 625 && R.IsReady() && myHero.Spellbook.GetSpell(SpellSlot.R).Name != "ZedR2")
- 				R.Cast(target,UsePacket);
+ 			if (myHero.Distance(enemy) <= 625 && R.IsReady() && myHero.Spellbook.GetSpell(SpellSlot.R).Name != "ZedR2")
+ 			{
+ 				R.Cast(enemy,UsePacket);
+		
+ 			}
  		}
     }
 }
