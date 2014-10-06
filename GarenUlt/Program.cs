@@ -36,8 +36,10 @@ namespace GarenUlt
 			Orbwalker = new Orbwalking.Orbwalker(Config.SubMenu("Orbwalking"));
 			
 			Config.AddSubMenu(new Menu("Ultimate", "Ultimate"));
+			Config.SubMenu("Ultimate").AddItem(new MenuItem("AutoUlt", "ON:Silder,Off:Killable").SetValue(new KeyBind("L".ToCharArray()[0],KeyBindType.Toggle,false)));
 			Config.SubMenu("Ultimate").AddItem(new MenuItem("HP", "Auto R if %HP").SetValue(new Slider(10,100,0)));
-            		Config.AddToMainMenu(); 
+			Config.AddToMainMenu();  
+            
             Game.PrintChat("Garen Ult loaded!");
 
 			Game.OnGameUpdate += Game_OnGameUpdate;
@@ -50,6 +52,7 @@ namespace GarenUlt
                
         private static void AutoR()
         {
+        	var AutoUlt = Config.Item("AutoUlt").GetValue<bool>();
         	var HP = Config.Item("HP").GetValue<Slider>().Value;
         	foreach (var enemy in ObjectManager.Get<Obj_AI_Hero>().Where(enemy => enemy.IsEnemy && enemy.IsValidTarget(450)))
         	{
@@ -57,9 +60,8 @@ namespace GarenUlt
         		{
         			var TargetHP = enemy.Health/enemy.MaxHealth*100;
         			var DmgUlt = Damage.GetSpellDamage(myHero,enemy,SpellSlot.R);
-        			if (TargetHP <= HP || enemy.Health < DmgUlt)
-        				if (!enemy.HasBuff("JudicatorIntervention") || !enemy.HasBuff("Undying Rage"))
-        					R.Cast(enemy,true);
+        			if ( (TargetHP <= HP && AutoUlt) || (enemy.Health < DmgUlt && !AutoUlt) )
+        				if (!enemy.HasBuff("JudicatorIntervention") || !enemy.HasBuff("Undying Rage")) R.Cast(enemy,true);        					
         		}      
         	}
         }
