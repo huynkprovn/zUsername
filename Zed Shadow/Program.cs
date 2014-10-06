@@ -43,7 +43,8 @@ namespace ZedShadow
 		private static int CloneRTick;
 		private static Vector3 CloneRNearPosition;
 		
-		private static bool wcast = false;
+		private static bool WCasted;		
+		private static bool CheckW;
 		
         private static void Main(string[] args)
         {
@@ -63,6 +64,8 @@ namespace ZedShadow
 			CloneRFound = false;
 			CloneRTick = 0;
 			RCastTick = 0;
+			WCasted = false;
+			CheckW = false;
         }
           
         private static void Game_OnGameLoad(EventArgs args)
@@ -135,8 +138,11 @@ namespace ZedShadow
 			UpdateMana();
 			autoIgnite();
 			CloneCheck();
-			if (wClone != null ) wcast = true;
-			if (wClone == null ) wcast = false;
+			if (CheckW)
+			{
+				if (wClone != null ) WCasted = true;
+				if (wClone == null ) WCasted = false;
+			}
 			if (RCastTick < Environment.TickCount - 5000) UseSwap = true;
 
 			if (Q.IsReady() && E.IsReady() && W.IsReady()) Target = SimpleTs.GetTarget(1200, SimpleTs.DamageType.Physical);
@@ -149,7 +155,7 @@ namespace ZedShadow
  					if (enemy.HasBuff("zedulttargetmark")) 
  						Target = enemy;
  				}
-        	}
+        	}        	
 			if (Config.Item("Fight").GetValue<KeyBind>().Active) 
 			{
 				if (Config.Item("Movement").GetValue<bool>()) Orbwalker.SetAttacks(false);
@@ -157,8 +163,10 @@ namespace ZedShadow
 				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) Fight2(Target);
 			}
 			else Orbwalker.SetAttacks(true);
-			if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
-				Harass(Target);
+			if (CheckW)
+				if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
+					Harass(Target);
+			CheckW = false;
         }
         
         
@@ -183,6 +191,7 @@ namespace ZedShadow
 				CloneRCreated = false;
 				CloneRFound = false;
 			}
+			CheckW = true;
         }
         
         private static void SearchForClone(string p)
@@ -499,7 +508,7 @@ namespace ZedShadow
  				
  				if (Q.IsReady() && W.IsReady() && (myHero.Distance(target) < 800) && (MyMana > QMana+WMana+EMana))
  				{
- 					if (Environment.TickCount > (lastW + 1000) && wcast == false && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash")
+ 					if (Environment.TickCount > (lastW + 1000) && !WCasted && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash")
 					{
 							W.Cast(target,UsePacket);
 							if (wUsed) E.Cast();					
@@ -517,7 +526,7 @@ namespace ZedShadow
  					var DashPos = myHero.Position + Vector3.Normalize(target.Position - myHero.Position) * 550;
  					if (Q.IsReady() && W.IsReady() && (MyMana > QMana+WMana))
  					{
- 						if (wcast == false && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash") W.Cast(DashPos,UsePacket);
+ 						if (!WCasted && myHero.Spellbook.GetSpell(SpellSlot.W).Name == "ZedShadowDash") W.Cast(DashPos,UsePacket);
  					}
  					if (wClone != null) CastQClone(target);
  				}
