@@ -37,7 +37,7 @@ namespace GarenUlt
 			
 			Config.AddSubMenu(new Menu("Ultimate", "Ultimate"));
 			Config.SubMenu("Ultimate").AddItem(new MenuItem("HP", "Auto R if %HP").SetValue(new Slider(10,100,0)));
-            
+            		Config.AddToMainMenu(); 
             Game.PrintChat("Garen Ult loaded!");
 
 			Game.OnGameUpdate += Game_OnGameUpdate;
