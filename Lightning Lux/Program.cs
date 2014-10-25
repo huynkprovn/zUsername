@@ -297,7 +297,7 @@ namespace LightningLux
         		return true; 		
 			return false;			
         }
-         
+                
        	private static void UseCombo()
         {
         	var UseQ = Config.Item("UseQ").GetValue<bool>();
