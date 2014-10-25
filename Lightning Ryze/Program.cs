@@ -90,7 +90,7 @@ namespace LightningRyze
 			Config.SubMenu("Drawings").AddItem(new MenuItem("WERange", "W+E range").SetValue(new Circle(false, Color.FromArgb(255, 255, 255, 255))));
 			Config.AddToMainMenu();       
 			
-			Game.PrintChat("Lightning Ryze v1.1 loaded!");
+			Game.PrintChat("Lightning Ryze loaded!");
 
 			Game.OnGameUpdate += Game_OnGameUpdate;
 			LXOrbwalker.BeforeAttack += LXOrbwalker_BeforeAttack;
@@ -243,9 +243,9 @@ namespace LightningRyze
 					if (Q.IsReady() && W.IsReady() && E.IsReady() && GetComboDamage(target) > target.Health)
 					{
 						if (Q.IsReady()) Q.CastOnUnit(target,UsePacket);
-						if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
-						if (W.IsReady()) W.CastOnUnit(target,UsePacket);
-						if (E.IsReady()) E.CastOnUnit(target,UsePacket);
+						else if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
+						else if (W.IsReady()) W.CastOnUnit(target,UsePacket);
+						else if (E.IsReady()) E.CastOnUnit(target,UsePacket);
 					}
 					else if (Math.Abs(myHero.PercentCooldownMod) >= 0.2)
 					{
@@ -276,9 +276,9 @@ namespace LightningRyze
 					else
 					{
 						if (Q.IsReady()) Q.CastOnUnit(target ,UsePacket);
-						if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
-						if (E.IsReady()) E.CastOnUnit(target ,UsePacket);
-						if (W.IsReady()) W.CastOnUnit(target ,UsePacket);
+						else if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
+						else if (E.IsReady()) E.CastOnUnit(target ,UsePacket);
+						else if (W.IsReady()) W.CastOnUnit(target ,UsePacket);
 					}
 				}
         	}
@@ -305,9 +305,9 @@ namespace LightningRyze
         		else
         		{
         			if (Q.IsReady()) Q.CastOnUnit(target ,UsePacket);
-					if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
-					if (E.IsReady()) E.CastOnUnit(target ,UsePacket);
-					if (W.IsReady()) W.CastOnUnit(target ,UsePacket);
+					else if (R.IsReady() && UseR) R.CastOnUnit(myHero,UsePacket);
+					else if (E.IsReady()) E.CastOnUnit(target ,UsePacket);
+					else if (W.IsReady()) W.CastOnUnit(target ,UsePacket);
         		}
         	}		
         }
