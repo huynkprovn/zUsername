@@ -108,10 +108,10 @@ namespace LightningRyze
 				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) ComboBurst();
 				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 2) ComboLong();
 			}
-			if (Config.Item("HarassActive").GetValue<KeyBind>().Active) Harass();
-			if (Config.Item("LaneClearActive").GetValue<KeyBind>().Active ||
+			else if (Config.Item("HarassActive").GetValue<KeyBind>().Active) Harass();
+			else if (Config.Item("LaneClearActive").GetValue<KeyBind>().Active ||
 			    Config.Item("FreezeActive").GetValue<KeyBind>().Active) Farm();
-			if (Config.Item("JungActive").GetValue<KeyBind>().Active) JungleFarm();
+			else if (Config.Item("JungActive").GetValue<KeyBind>().Active) JungleFarm();
 			if (Config.Item("UseSera").GetValue<bool>()) UseItems();
         }
         
