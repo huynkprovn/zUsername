@@ -478,7 +478,7 @@ namespace LightningLux
         		{
         			var castPostion = MinionManager.GetBestCircularFarmLocation(Minions.Select(minion => minion.ServerPosition.To2D()).ToList(), E.Width, E.Range);
 					E.Cast(castPostion.Position, UsePacket);
-					E.CastOnUnit(Minions[0],UsePacket);
+					E.CastOnUnit(myHero,UsePacket);
         		}
         	}
         }         	
