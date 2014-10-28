@@ -158,11 +158,11 @@ namespace ZedShadow
         	}        	
 			if (Config.Item("Fight").GetValue<KeyBind>().Active) 
 			{
-				if (Config.Item("Movement").GetValue<bool>()) Orbwalker.SetAttacks(false);
+				if (Config.Item("Movement").GetValue<bool>()) Orbwalker.SetAttack(false);
 				if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 0) Fight(Target);
 				else if (Config.Item("TypeCombo").GetValue<StringList>().SelectedIndex == 1) Fight2(Target);
 			}
-			else Orbwalker.SetAttacks(true);
+			else Orbwalker.SetAttack(true);
 			if (CheckW)
 				if (Config.Item("harassKey").GetValue<KeyBind>().Active) 
 					Harass(Target);
