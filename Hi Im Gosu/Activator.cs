@@ -15,6 +15,7 @@ namespace hi_im_gosu
 		public string BuffName { get; set; }
 		public bool DefaultValue { get; set; }
 	}
+	
 	internal class Activator
 	{
 		public readonly List<BuffList> BuffList = new List<BuffList>();
