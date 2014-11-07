@@ -16,6 +16,7 @@ namespace hi_im_gosu
         public static Spell Q;
         public static Orbwalking.Orbwalker orbwalker;
         public static Menu menu;
+       	public static Obj_AI_Hero Player;
         public static string[] interrupt;
         public static string[] notarget;
         public static string[] gapcloser;
@@ -31,7 +32,8 @@ namespace hi_im_gosu
 
         public static void Game_OnGameLoad(EventArgs args)
         {
-        	if (ObjectManager.Player.ChampionName != "Vayne") return;
+        	Player = ObjectManager.Player;
+        	if (Player.ChampionName != "Vayne") return;
         	
         	AActivator = new Activator();
             menu = new Menu("Hi Im Gosu", "Hi Im Gosu", true);
@@ -63,8 +65,7 @@ namespace hi_im_gosu
 			potions.AddItem(new MenuItem("HPercent", "HP %").SetValue(new Slider(20,100,0)));
 			
 			var tumbles = menu.AddSubMenu(new Menu("Wall Tumbles", "Tumbles"));
-			tumbles.AddItem(new MenuItem("DrakeWallT", "Tumble Drake Wall!").SetValue(new KeyBind("W".ToCharArray()[0], KeyBindType.Press)));
-			tumbles.AddItem(new MenuItem("MidWallT", "Tumble Mid Wall").SetValue(new KeyBind("Z".ToCharArray()[0], KeyBindType.Press)));
+			tumbles.AddItem(new MenuItem("WallTumbles", "Tumble Over Wall!").SetValue(new KeyBind("W".ToCharArray()[0], KeyBindType.Press)));
 			tumbles.AddItem(new MenuItem("DrawCD", "Draw Drake Wall Circle").SetValue(new Circle(true, System.Drawing.Color.FromArgb(255, 255, 255, 255))));
 			tumbles.AddItem(new MenuItem("DrawCM", "Draw Mid Wall Circle").SetValue(new Circle(true, System.Drawing.Color.FromArgb(255, 255, 255, 255))));
 			
@@ -73,7 +74,7 @@ namespace hi_im_gosu
             menu.AddItem(new MenuItem("PushDistance", "E Push Distance").SetValue(new Slider(425, 475, 300)));
             menu.AddItem(new MenuItem("UseQC", "Use Q").SetValue(true));
             menu.AddItem(new MenuItem("UseEC", "Use E").SetValue(true));
-            menu.AddItem(new MenuItem("UseEaa", "Use E after auto").SetValue(new KeyBind("G".ToCharArray()[0], KeyBindType.Toggle)));
+            menu.AddItem(new MenuItem("UseEaa", "Use E after AA").SetValue(new KeyBind("G".ToCharArray()[0], KeyBindType.Toggle)));
             menu.AddSubMenu(new Menu("Gapcloser List", "gap"));
             menu.AddSubMenu(new Menu("Gapcloser List 2", "gap2"));
             menu.AddSubMenu(new Menu("Interrupt List", "int"));
@@ -122,12 +123,12 @@ namespace hi_im_gosu
               								  menu.Item(args.SData.Name).GetValue<bool>())
                 if (interrupt.Any(str => str.Contains(args.SData.Name))) E.Cast(hero);
 
-            if (gapcloser.Any(str => str.Contains(args.SData.Name)) && args.Target == ObjectManager.Player &&
+            if (gapcloser.Any(str => str.Contains(args.SData.Name)) && args.Target == Player &&
                 					hero.IsValidTarget(550f) && menu.Item(args.SData.Name).GetValue<bool>())
                 E.Cast(hero);
 
             if (notarget.Any(str => str.Contains(args.SData.Name)) &&
-               			 Vector3.Distance(args.End, ObjectManager.Player.Position) <= 300 && hero.IsValidTarget(550f) &&
+               			 Vector3.Distance(args.End, Player.Position) <= 300 && hero.IsValidTarget(550f) &&
                			 menu.Item(args.SData.Name).GetValue<bool>())
                 E.Cast(hero);
         }
@@ -169,10 +170,10 @@ namespace hi_im_gosu
 
                 if (orbwalker.ActiveMode.ToString() == "Combo" && menu.Item("UseQC").GetValue<bool>() && Q.IsReady())
                 {
-                    var after = ObjectManager.Player.Position + Normalize(Game.CursorPos - ObjectManager.Player.Position)*300;                              
+                    var after = Player.Position + Normalize(Game.CursorPos - Player.Position)*300;                              
                     var disafter = Vector3.DistanceSquared(after, tar.Position);
                     if ((disafter < 630*630) && disafter > 150*150) Q.Cast(Game.CursorPos);                       
-                    if (Vector3.DistanceSquared(tar.Position, ObjectManager.Player.Position) > 630*630 && disafter < 630*630)                        															
+                    if (Vector3.DistanceSquared(tar.Position, Player.Position) > 630*630 && disafter < 630*630)                        															
                        	Q.Cast(Game.CursorPos);
                 }
             }
@@ -186,7 +187,7 @@ namespace hi_im_gosu
         
         public static void CheckChampionBuff()
 		{
-			foreach (var t1 in ObjectManager.Player.Buffs)
+			foreach (var t1 in Player.Buffs)
 			{
 				foreach (var t in QuickSilverMenu.Items)
 				{
@@ -198,17 +199,17 @@ namespace hi_im_gosu
 							if (Items.HasItem(3140)) Items.UseItem(3140);
 						}
 					}
-					if (QuickSilverMenu.Item("AnySnare").GetValue<bool>() && ObjectManager.Player.HasBuffOfType(BuffType.Snare))
+					if (QuickSilverMenu.Item("AnySnare").GetValue<bool>() && Player.HasBuffOfType(BuffType.Snare))
 					{
 						if (Items.HasItem(3139)) Items.UseItem(3139);
 						if (Items.HasItem(3140)) Items.UseItem(3140);
 					}
-					if (QuickSilverMenu.Item("AnyStun").GetValue<bool>() && ObjectManager.Player.HasBuffOfType(BuffType.Stun))
+					if (QuickSilverMenu.Item("AnyStun").GetValue<bool>() && Player.HasBuffOfType(BuffType.Stun))
 					{
 						if (Items.HasItem(3139)) Items.UseItem(3139);
 						if (Items.HasItem(3140)) Items.UseItem(3140);
 					}
-					if (QuickSilverMenu.Item("AnyTaunt").GetValue<bool>() && ObjectManager.Player.HasBuffOfType(BuffType.Taunt))
+					if (QuickSilverMenu.Item("AnyTaunt").GetValue<bool>() && Player.HasBuffOfType(BuffType.Taunt))
 					{
 						if (Items.HasItem(3139)) Items.UseItem(3139);
 						if (Items.HasItem(3140)) Items.UseItem(3140);
@@ -222,21 +223,21 @@ namespace hi_im_gosu
         	var Heal = menu.Item("Heal").GetValue<bool>();
 			var Barrier = menu.Item("Barrier").GetValue<bool>();
 			var HPercent = menu.Item("HPercent").GetValue<Slider>().Value;
-			var HealSlot = Utility.GetSpellSlot(ObjectManager.Player, "SummonerHeal");
-			var BarrierSlot = Utility.GetSpellSlot(ObjectManager.Player, "SummonerBarrier");
-			if (Heal && HealSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(HealSlot) == SpellState.Ready)
+			var HealSlot = Utility.GetSpellSlot(Player, "SummonerHeal");
+			var BarrierSlot = Utility.GetSpellSlot(Player, "SummonerBarrier");
+			if (Heal && HealSlot != SpellSlot.Unknown && Player.SummonerSpellbook.CanUseSpell(HealSlot) == SpellState.Ready)
 			{
-				if ((int)(ObjectManager.Player.Health * 100 / ObjectManager.Player.MaxHealth) <= HPercent && playerHit == ObjectManager.Player.NetworkId && gotHit)
+				if ((int)(Player.Health * 100 / Player.MaxHealth) <= HPercent && playerHit == Player.NetworkId && gotHit)
 				{
-				    ObjectManager.Player.SummonerSpellbook.CastSpell(HealSlot);
+				    Player.SummonerSpellbook.CastSpell(HealSlot);
 					gotHit = false;
 				}
 			}
-			else if (Barrier && BarrierSlot != SpellSlot.Unknown && ObjectManager.Player.SummonerSpellbook.CanUseSpell(BarrierSlot) == SpellState.Ready)
+			else if (Barrier && BarrierSlot != SpellSlot.Unknown && Player.SummonerSpellbook.CanUseSpell(BarrierSlot) == SpellState.Ready)
 			{
-				if ((int)(ObjectManager.Player.Health * 100 / ObjectManager.Player.MaxHealth) <= HPercent && playerHit == ObjectManager.Player.NetworkId && gotHit)
+				if ((int)(Player.Health * 100 / Player.MaxHealth) <= HPercent && playerHit == Player.NetworkId && gotHit)
 				{
-				    ObjectManager.Player.SummonerSpellbook.CastSpell(BarrierSlot);
+				    Player.SummonerSpellbook.CastSpell(BarrierSlot);
 					gotHit = false;
 				}
 			}
@@ -255,36 +256,35 @@ namespace hi_im_gosu
 			var target = orbwalker.GetTarget();
 			if (botrk)
 			{
-				if (target != null && target.Type == ObjectManager.Player.Type && target.ServerPosition.Distance(ObjectManager.Player.ServerPosition) < 450)
+				if (target != null && target.Type == Player.Type && target.ServerPosition.Distance(Player.ServerPosition) < 450)
 				{
 					var hasCutGlass = Items.HasItem(3144);
 					var hasBotrk = Items.HasItem(3153);
 					if (hasBotrk || hasCutGlass)
 					{
 						var itemId = hasCutGlass ? 3144 : 3153;
-						var damage = ObjectManager.Player.GetItemDamage(target, Damage.DamageItems.Botrk);
-						if (hasCutGlass || ObjectManager.Player.Health + damage < ObjectManager.Player.MaxHealth)
+						var damage = Player.GetItemDamage(target, Damage.DamageItems.Botrk);
+						if (hasCutGlass || Player.Health + damage < Player.MaxHealth)
 							Items.UseItem(itemId, target);
 					}
 				}
 			}
-			if (ghostblade && target != null && target.Type == ObjectManager.Player.Type && Orbwalking.InAutoAttackRange(target))
+			if (ghostblade && target != null && target.Type == Player.Type && Orbwalking.InAutoAttackRange(target))
 				Items.UseItem(3142);
-			if (divine && target != null && target.Type == ObjectManager.Player.Type && Orbwalking.InAutoAttackRange(target))
+			if (divine && target != null && target.Type == Player.Type && Orbwalking.InAutoAttackRange(target))
 				Items.UseItem(3131);
        	}
-
+        
         public static void Game_OnGameUpdate(EventArgs args)
         {
         	UseItems();
         	
-        	if (menu.Item("DrakeWallT").GetValue<KeyBind>().Active) DrakeWall();
-			else if (menu.Item("MidWallT").GetValue<KeyBind>().Active) MidWall();
+        	if (menu.Item("WallTumbles").GetValue<KeyBind>().Active) WallTumbles();
 
             if ((!E.IsReady()) ||
                 ((orbwalker.ActiveMode.ToString() != "Combo" || !menu.Item("UseEC").GetValue<bool>()) &&
                  !menu.Item("UseET").GetValue<KeyBind>().Active)) return;
-
+			
             foreach (var hero in from hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsValidTarget(550f))
                 let prediction = E.GetPrediction(hero)
                 where NavMesh.GetCollisionFlags(
@@ -299,28 +299,52 @@ namespace hi_im_gosu
                             .To3D())
                         .HasFlag(CollisionFlags.Wall)
                 select hero)   E.Cast(hero);
+			
+//			foreach (Obj_AI_Hero hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
+//			{
+//				if (hero.IsValid && !hero.IsDead && hero.IsVisible && Player.Distance(hero) < 715f &&
+//						Player.Distance(hero) > 0f)
+//				{
+//					PredictionOutput pred = E.GetPrediction(hero);
+//					int pushDist = menu.Item("PushDistance").GetValue<Slider>().Value;
+//					for (int i = 0; i < pushDist; i += (int) hero.BoundingRadius)
+//					{   
+//						Vector2 location = Player.Position.To2D() + i*Vector3.Normalize(pred.CastPosition - Player.Position).To2D();
+//						Vector3 loc2 = new Vector3(location.X, Player.Position.Y, location.Y);
+//						Vector3 loc3 = pred.UnitPosition.To2D().Extend(Player.ServerPosition.To2D(),-i).To3D();
+//						if (NavMesh.GetCollisionFlags(loc3) == CollisionFlags.Wall || NavMesh.GetCollisionFlags(loc3) == CollisionFlags.Building)
+//						{
+//							E.Cast(hero);
+//							break;
+//						}
+//					}
+//				}
+//			}
         }
         
-        public static void DrakeWall()
+        public static void WallTumbles()
 		{
+        	Vector2 MidWallQPos = new Vector2(6010.5869140625f, 8508.8740234375f);
 			Vector2 DrakeWallQPos = new Vector2(11334.74f, 4517.47f);
-			if (ObjectManager.Player.Position.X < 11540 || ObjectManager.Player.Position.X > 11600 || ObjectManager.Player.Position.Y < 4638 || ObjectManager.Player.Position.Y > 4712)
-				Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(11590.95f, 4656.26f)).Send();
-			else
+			if (Player.Distance(MidWallQPos) >= Player.Distance(DrakeWallQPos))
 			{
-				Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(11590.95f, 4656.26f)).Send();
-				Q.Cast(DrakeWallQPos, true);
+				if (Player.Position.X < 11540 || Player.Position.X > 11600 || Player.Position.Y < 4638 || Player.Position.Y > 4712)
+					Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(11590.95f, 4656.26f)).Send();
+				else
+				{
+					Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(11590.95f, 4656.26f)).Send();
+					Q.Cast(DrakeWallQPos, true);
+				}
 			}
-		}
-		public static void MidWall()
-		{
-			Vector2 MidWallQPos = new Vector2(6010.5869140625f, 8508.8740234375f);
-			if (ObjectManager.Player.Position.X < 6600 || ObjectManager.Player.Position.X > 6660 || ObjectManager.Player.Position.Y < 8630 || ObjectManager.Player.Position.Y > 8680)
-				Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(6623, 8649)).Send();
 			else
 			{
-				Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(6623, 8649)).Send();
-				Q.Cast(MidWallQPos, true);
+				if (Player.Position.X < 6600 || Player.Position.X > 6660 || Player.Position.Y < 8630 || Player.Position.Y > 8680)
+					Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(6623, 8649)).Send();
+				else
+				{
+					Packet.C2S.Move.Encoded(new Packet.C2S.Move.Struct(6623, 8649)).Send();
+					Q.Cast(MidWallQPos, true);
+				}
 			}
 		}
     }
